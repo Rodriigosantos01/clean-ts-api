@@ -12,6 +12,7 @@ const config: Config = {
   collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
   coverageDirectory: "coverage",
   testEnvironment: 'node',
+  preset: '@shelf/hest-mongodb',
   transform: {
     '.+\\.ts$': 'ts-jest'
   }
