@@ -2,8 +2,8 @@ import { LogErrorRepository } from "../../data/protocols/log-error-repository";
 import { serverError } from "../../representation/helpers/http-helpers";
 import {
   Controller,
-  httpRequest,
-  httpResponse,
+  HttpRequest,
+  HttpResponse,
 } from "../../representation/protocols";
 import { LogControllerDecorator } from "./log";
 
@@ -19,8 +19,8 @@ const makeLogErrorRepository = (): LogErrorRepository => {
 
 const makeController = (): Controller => {
   class ControllerStub implements Controller {
-    handle(httpRequest: httpRequest): Promise<httpResponse> {
-      const httpResponse: httpResponse = {
+    handle(httpRequest: HttpRequest): Promise<HttpResponse> {
+      const httpResponse: HttpResponse = {
         statusCode: 200,
         body: {
           name: "Rodrigo",
