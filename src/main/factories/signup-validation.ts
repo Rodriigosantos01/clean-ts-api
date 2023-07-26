@@ -1,7 +1,9 @@
 import { CompareFieldValidation } from "../../representation/helpers/validators/compare-field-validation";
+import { EmailValidation } from "../../representation/helpers/validators/email-validation";
 import { RequireFieldValidation } from "../../representation/helpers/validators/required-field-validation";
 import { Validation } from "../../representation/helpers/validators/validation";
 import { ValidationComposite } from "../../representation/helpers/validators/validation-composite";
+import { EmailValidatorAdapter } from "../../utils/email-validator-adapter";
 
 export const makeSignUpValidation = (): ValidationComposite => {
   const validations: Validation[] = [];
@@ -9,6 +11,6 @@ export const makeSignUpValidation = (): ValidationComposite => {
     validations.push(new RequireFieldValidation(field));
   }
   validations.push(new CompareFieldValidation("password", "passwordConfirmation"))
-  
+  validations.push(new EmailValidation("email", new EmailValidatorAdapter()));
   return new ValidationComposite(validations);
 };
