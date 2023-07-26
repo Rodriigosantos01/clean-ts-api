@@ -62,6 +62,6 @@ describe("Login Controller", () => {
     };
 
     await sut.handle(httpRequest);
-    
+    expect(isValidSpy).toHaveBeenCalledWith("any_email@mail.com")
   });
 });
