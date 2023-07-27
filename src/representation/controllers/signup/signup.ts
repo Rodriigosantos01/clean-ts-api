@@ -6,7 +6,7 @@ import {
   Validation,
 } from "./signup-protocols";
 import { InvalidParamError } from "../../errors";
-import { badRequest, ok, serverError } from "../../helpers/http-helpers";
+import { badRequest, ok, serverError } from "../../helpers/http/http-helpers";
 
 export class SignUpController implements Controller {
   private readonly addAccount: AddAccount;
