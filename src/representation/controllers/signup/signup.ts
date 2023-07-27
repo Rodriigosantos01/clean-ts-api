@@ -2,7 +2,6 @@ import {
   Controller,
   HttpRequest,
   HttpResponse,
-  EmailValidator,
   AddAccount,
   Validation,
 } from "./signup-protocols";
