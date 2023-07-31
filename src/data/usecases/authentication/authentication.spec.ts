@@ -61,7 +61,7 @@ describe('DbAuthentication usecase', () => {
         expect(loadSpy).toHaveBeenCalledWith('any_email@mail.com')
     });
 
-    test('Should throw if  LoadAccountByEmailRepository throws', () => {
+    test('Should throw if LoadAccountByEmailRepository throws', () => {
         const { sut, loadAccountByEmailRepositoryStub } = makeSut()
         jest.spyOn(loadAccountByEmailRepositoryStub, 'load').mockReturnValueOnce(new Promise((resolve, reject) => reject(new Error())))
         const promise = sut.auth(makeFakeAthentication())
@@ -80,5 +80,14 @@ describe('DbAuthentication usecase', () => {
         const compareSpy = jest.spyOn(hashComparerStub, 'compare')
         await sut.auth(makeFakeAthentication())
         expect(compareSpy).toHaveBeenCalledWith('any_password', 'hashed_password')
+    });
+
+    test('Should throw if  LoadAccountByEmailRepository throws', async () => {
+        const { sut, hashComparerStub } = makeSut()
+        jest.spyOn(hashComparerStub, 'compare').mockReturnValueOnce(
+            new Promise((resolve, reject) => reject(new Error()))
+        );
+        const promise = sut.auth(makeFakeAthentication())
+        await expect(promise).rejects.toThrow()
     });
 });
