@@ -1,10 +1,5 @@
-import { AuthenticationModel } from "../../../domain/usecases/authentication";
-import { HashComparer } from "../../protocols/criptography/hash-comparer";
-import { TokenGenerator } from "../../protocols/criptography/token-generator";
-import { LoadAccountByEmailRepository } from "../../protocols/db/load-account-by-email-repository-";
-import { AccountModel } from "../add-account/db-add-account-protocols";
-import { UpdateAccessTokenRepository } from "../add-account/update-access-token-repository";
 import { DbAuthentication } from "./db.authentication";
+import { AccountModel, LoadAccountByEmailRepository, AuthenticationModel, HashComparer, UpdateAccessTokenRepository, TokenGenerator } from "./db-authentication-protocols";
 
 const makeFakeAccount = (): AccountModel => ({
     id: 'any_id',
@@ -149,7 +144,7 @@ describe('DbAuthentication usecase', () => {
         expect(accessToken).toBe('any_token')
     });
 
-    
+
     test('Should call UpdateAccessTokenRepository with correct values', async () => {
         const { sut, updateAccessTokenRepositoryStub } = makeSut()
         const updateSpy = jest.spyOn(updateAccessTokenRepositoryStub, 'update')
