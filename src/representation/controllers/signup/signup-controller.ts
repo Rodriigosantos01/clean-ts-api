@@ -4,7 +4,7 @@ import {
   HttpResponse,
   AddAccount,
   Validation,
-} from "./signup-protocols";
+} from "./signup-controller-protocols";
 import { InvalidParamError } from "../../errors";
 import { badRequest, ok, serverError } from "../../helpers/http/http-helpers";
 
