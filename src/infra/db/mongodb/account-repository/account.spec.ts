@@ -1,5 +1,8 @@
+import { Collection } from "mongodb";
 import { MongoHelper } from "../helpers/mongo-helpers";
 import { AccountMongoRepository } from "./account";
+
+let accountCollection: Collection
 
 describe('Account Mongo Repository', () => {
     beforeAll(async () => {
@@ -11,7 +14,7 @@ describe('Account Mongo Repository', () => {
     })
 
     beforeEach(async () => {
-        const accountCollection = await MongoHelper.getCollection('accounts')
+        accountCollection = await MongoHelper.getCollection('accounts')
         await accountCollection.deleteMany({})
     })
 
@@ -19,7 +22,7 @@ describe('Account Mongo Repository', () => {
         return new AccountMongoRepository()
     }
 
-    test('Shold return an account on success', async () => {
+    test('Shold return an account on add success', async () => {
         const sut = makeSut()
 
         const account = await sut.add({
@@ -33,5 +36,21 @@ describe('Account Mongo Repository', () => {
         expect(account.name).toBe('any_name')
         expect(account.email).toBe('any_email@email.com')
         expect(account.password).toBe('any_passowrd')
-    })  
+    })
+
+    test('Shold return an account on loadByEmail success', async () => {
+        const sut = makeSut()
+        await accountCollection.insertOne({
+            name: 'any_name',
+            email: 'any_email@email.com',
+            password: 'any_passowrd'
+        })
+        const account = await sut.loadByEmail('any_email@email.com')
+
+        expect(account).toBeTruthy()
+        expect(account.id).toBeTruthy()
+        expect(account.name).toBe('any_name')
+        expect(account.email).toBe('any_email@email.com')
+        expect(account.password).toBe('any_passowrd')
+    })
 });
