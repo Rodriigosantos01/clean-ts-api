@@ -9,7 +9,7 @@ const config: Config = {
   roots: ["<rootDir>/src"],
   clearMocks: true,
   collectCoverage: false,
-  collectCoverageFrom: ["<rootDir>/src/**/*.ts" , "!<rootDir>/src/main/**"],
+  collectCoverageFrom: ['<rootDir>/src/**/*.ts', '!<rootDir>/src/main/**', '!<rootDir>/src/**/*-protocols.ts', '!**/protocols/**', '!**/test/**' ],
   coverageDirectory: "coverage",
   testEnvironment: "node",
   preset: "@shelf/jest-mongodb",
