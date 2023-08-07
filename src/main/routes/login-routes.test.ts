@@ -10,7 +10,7 @@ jest.useRealTimers();
 
 describe("Login Routes", () => {
   beforeAll(async () => {
-    await MongoHelper.connect(process.env.MONGO_url);
+    await MongoHelper.connect(process.env.MONGO_URL);
   });
 
   afterAll(async () => {
