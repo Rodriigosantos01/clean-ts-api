@@ -4,6 +4,7 @@ import {
   AddAccountModel,
   Hasher,
   AddAccountRepository,
+  LoadAccountByEmailRepository
 } from "./db-add-account-protocols";
 
 const makeHasher = (): Hasher => {
@@ -19,40 +20,52 @@ const makeHasher = (): Hasher => {
 const makeAddAccountRepository = (): AddAccountRepository => {
   class addAccountRepositoryStub implements AddAccountRepository {
     async add(accountData: AddAccountModel): Promise<AccountModel> {
-      return new Promise((resolve) => resolve(makeFaceAccount()));
+      return new Promise((resolve) => resolve(makeFakeAccount()));
     }
   }
 
   return new addAccountRepositoryStub();
 };
 
-const makeFaceAccount = (): AccountModel => ({
+const makeFakeAccount = (): AccountModel => ({
   id: "valid_id",
   name: "valid_name",
-  email: "valid_email",
+  email: "valid_email@email.com",
   password: "hashed_password",
 })
 
-const makeFaceAccountData = (): AddAccountModel => ({
+const makeFakeAccountData = (): AddAccountModel => ({
   name: "valid_name",
-  email: "valid_email",
+  email: "valid_email@email.com",
   password: "valid_password",
 })
+
+const makeLoadAccountByEmailRepository = (): LoadAccountByEmailRepository => {
+  class LoadAccountByEmailRepositoryStub implements LoadAccountByEmailRepository {
+      async loadByEmail(email: string): Promise<AccountModel> {
+          return new Promise(resolve => resolve(makeFakeAccount()))
+      }
+  }
+  return new LoadAccountByEmailRepositoryStub()
+}
 
 interface SutTypes {
   sut: DbAddAccount;
   hasherStub: Hasher;
   addAccountRepositoryStub: AddAccountRepository;
+  loadAccountByEmailRepositoryStub: LoadAccountByEmailRepository
 }
 
 const makeSut = (): SutTypes => {
+  const loadAccountByEmailRepositoryStub = makeLoadAccountByEmailRepository()
   const hasherStub = makeHasher();
   const addAccountRepositoryStub = makeAddAccountRepository();
-  const sut = new DbAddAccount(hasherStub, addAccountRepositoryStub);
+  const sut = new DbAddAccount(hasherStub, addAccountRepositoryStub, loadAccountByEmailRepositoryStub);
   return {
     sut,
     hasherStub,
     addAccountRepositoryStub,
+    loadAccountByEmailRepositoryStub
   };
 };
 
@@ -61,7 +74,7 @@ describe("DbAddAccount Usecase", () => {
     const { sut, hasherStub } = makeSut();
     const encryptSpy = jest.spyOn(hasherStub, "hash");
 
-    await sut.add(makeFaceAccountData());
+    await sut.add(makeFakeAccountData());
     expect(encryptSpy).toHaveBeenCalledWith("valid_password");
   });
 
@@ -73,7 +86,7 @@ describe("DbAddAccount Usecase", () => {
         new Promise((resolve, reject) => reject(new Error()))
       );
 
-    const promise = sut.add(makeFaceAccountData());
+    const promise = sut.add(makeFakeAccountData());
     await expect(promise).rejects.toThrow();
   });
 
@@ -81,10 +94,10 @@ describe("DbAddAccount Usecase", () => {
     const { sut, addAccountRepositoryStub } = makeSut();
     const addSpy = jest.spyOn(addAccountRepositoryStub, "add");
 
-    await sut.add(makeFaceAccountData());
+    await sut.add(makeFakeAccountData());
     expect(addSpy).toHaveBeenCalledWith({
       name: "valid_name",
-      email: "valid_email",
+      email: "valid_email@email.com",
       password: "hashed_password",
     });
   });
@@ -95,14 +108,21 @@ describe("DbAddAccount Usecase", () => {
       throw new Error();
     })
 
-    const promise = sut.add(makeFaceAccountData())
+    const promise = sut.add(makeFakeAccountData())
     await expect(promise).rejects.toThrow()
   });
 
   test("Shold return an account on success", async () => {
     const { sut } = makeSut();
 
-    const account = await sut.add(makeFaceAccountData());
-    expect(account).toEqual(makeFaceAccount())
+    const account = await sut.add(makeFakeAccountData());
+    expect(account).toEqual(makeFakeAccount())
   });
+
+  test('Should call LoadAccountByEmailRepository with correct email', async () => {
+    const { sut, loadAccountByEmailRepositoryStub } = makeSut()
+    const loadSpy = jest.spyOn(loadAccountByEmailRepositoryStub, 'loadByEmail')
+    await sut.add(makeFakeAccountData())
+    expect(loadSpy).toHaveBeenCalledWith('valid_email@email.com')
+});
 });
