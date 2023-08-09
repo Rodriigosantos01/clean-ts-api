@@ -9,34 +9,42 @@ const makeFakeAccount = (): AccountModel => ({
     name: "valid_name",
     email: "valid_email@email.com",
     password: "hashed_password",
-  })
+})
+
+const makeLoadAccountByToken = (): LoadAccountByToken => {
+    class LoadAccountByTokenStub implements LoadAccountByToken {
+        async load(accessToken: string, role?: string | undefined): Promise<AccountModel> {
+            return new Promise(resolve => resolve(makeFakeAccount()))
+        }
+
+    }
+    return new LoadAccountByTokenStub()
+}
+interface SutTypes {
+    sut: AuthMiddleware,
+    loadAccountByTokenStub: LoadAccountByToken
+}
+
+const makeSut = (): SutTypes => {
+    const loadAccountByTokenStub = makeLoadAccountByToken()
+    const sut = new AuthMiddleware(loadAccountByTokenStub)
+
+    return {
+        sut, loadAccountByTokenStub
+    }
+}
 
 describe('Auth Middleware', () => {
     test('Should return 403 if no x-access-token exists in header', async () => {
-        class LoadAccountByTokenStub implements LoadAccountByToken{
-            async load(accessToken: string, role?: string | undefined): Promise<AccountModel> {
-                return new Promise(resolve => resolve(makeFakeAccount()))
-            }
-
-        }
-        const loadAccountByTokenStub = new LoadAccountByTokenStub()
-        const sut = new AuthMiddleware(loadAccountByTokenStub)
+        const { sut } = makeSut()
 
         const HttpResponse = await sut.handle({})
         expect(HttpResponse).toEqual(forbidden(new AccessDeniedError()))
     });
-    
-    test('Should call LoadAccountByToken with correct accessToken', async () => {
-        class LoadAccountByTokenStub implements LoadAccountByToken{
-            async load(accessToken: string, role?: string | undefined): Promise<AccountModel> {
-                return new Promise(resolve => resolve(makeFakeAccount()))
-            }
 
-        }
-        
-        const loadAccountByTokenStub = new LoadAccountByTokenStub()
+    test('Should call LoadAccountByToken with correct accessToken', async () => {
+        const { sut, loadAccountByTokenStub } = makeSut()
         const loadSpy = jest.spyOn(loadAccountByTokenStub, 'load')
-        const sut = new AuthMiddleware(loadAccountByTokenStub)
 
         await sut.handle({
             headers: {
