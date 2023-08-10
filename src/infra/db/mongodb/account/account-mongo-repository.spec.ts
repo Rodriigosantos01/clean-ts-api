@@ -107,16 +107,46 @@ describe('Account Mongo Repository', () => {
             expect(account.password).toBe('any_passowrd')
         })    
         
-        test('Shold return an account on loadByToken with role', async () => {
+        test('Shold return an account on loadByToken with admin role', async () => {
             const sut = makeSut()
             await accountCollection.insertOne({
                 name: 'any_name',
                 email: 'any_email@email.com',
                 password: 'any_passowrd',
                 accessToken: 'any_token',
-                role: 'any_role'
+                role: 'admin'
             })
-            const account = await sut.loadByToken('any_token', 'any_role')
+            const account = await sut.loadByToken('any_token', 'admin')
+    
+            expect(account).toBeTruthy()
+            expect(account.id).toBeTruthy()
+            expect(account.name).toBe('any_name')
+            expect(account.email).toBe('any_email@email.com')
+            expect(account.password).toBe('any_passowrd')
+        })
+
+        test('Shold return null on loadByToken with invalid role', async () => {
+            const sut = makeSut()
+            await accountCollection.insertOne({
+                name: 'any_name',
+                email: 'any_email@email.com',
+                password: 'any_passowrd',
+                accessToken: 'any_token'
+            })
+            const account = await sut.loadByToken('any_token', 'admin')
+            expect(account).toBeFalsy()
+        })
+        
+        test('Shold return an account on loadByToken with if user is admin', async () => {
+            const sut = makeSut()
+            await accountCollection.insertOne({
+                name: 'any_name',
+                email: 'any_email@email.com',
+                password: 'any_passowrd',
+                accessToken: 'any_token',
+                role: 'admin'
+            })
+            const account = await sut.loadByToken('any_token')
     
             expect(account).toBeTruthy()
             expect(account.id).toBeTruthy()
