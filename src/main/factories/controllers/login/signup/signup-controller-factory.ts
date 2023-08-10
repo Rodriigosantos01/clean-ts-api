@@ -2,7 +2,7 @@ import { SignUpController } from "../../../../../representation/controllers/logi
 import { Controller } from "../../../../../representation/protocols";
 import { makeLogControllerDecorator } from "../../../decorators/log-controller-decorator-factory";
 import { makeDbAddAccoount } from "../../../usecases/account/add-account/db-add-account-factory";
-import { makeDbAuthentication } from "../../../usecases/auhtneitcation/db-authentication-factory";
+import { makeDbAuthentication } from "../../../usecases/account/authentication/db-authentication-factory";
 import { makeSignUpValidation } from "./signup-validation";
 
 
