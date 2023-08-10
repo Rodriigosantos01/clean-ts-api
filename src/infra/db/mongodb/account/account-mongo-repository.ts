@@ -32,7 +32,7 @@ export class AccountMongoRepository implements AddAccountRepository, LoadAccount
       _id: id
     },
       {
-        $set: { "accessToken": 'asdasdasd' }
+        $set: { "accessToken": token }
       })
   }
 
