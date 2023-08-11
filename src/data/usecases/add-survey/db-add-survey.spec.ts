@@ -43,7 +43,11 @@ describe('DbaddSurvey Usecase', () => {
         MockDate.set(new Date())
     })
 
+<<<<<<< HEAD
     beforeAll(() => {
+=======
+    afterAll(() => {
+>>>>>>> feat/list-surveys
         MockDate.reset()
     })
 
