@@ -48,8 +48,7 @@ const makeAuthentication = (): Authentication => {
 
   return new AuthenticationStub();
 };
-
-interface SutTypes {
+type SutTypes = {
   sut: SignUpController;
   addAccountStub: AddAccount;
   validationStub: Validation;
