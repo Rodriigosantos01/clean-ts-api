@@ -1,9 +1,9 @@
+import env from '@/main/config/env'
+import app from "@/main/config/app";
+import { MongoHelper } from "@/infra/db/mongodb/helpers/mongo-helpers";
 import request from "supertest";
-import app from "../config/app";
-import { MongoHelper } from "../../infra/db/mongodb/helpers/mongo-helpers";
 import { Collection } from "mongodb";
 import { sign } from 'jsonwebtoken'
-import env from '../config/env'
 
 let surveyCollection: Collection
 let accountCollection: Collection

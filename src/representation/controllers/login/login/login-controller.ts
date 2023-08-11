@@ -10,13 +10,13 @@ import {
   ok,
   serverError,
   unauthorized,
-} from "../../../helpers/http/http-helpers";
+} from "@/representation/helpers/http/http-helpers";
 
 export class LoginController implements Controller {
   constructor(
     private readonly authentication: Authentication,
     private readonly validation: Validation
-  ) {}
+  ) { }
 
   async handle(httpRequest: HttpRequest): Promise<HttpResponse> {
     try {
@@ -34,7 +34,7 @@ export class LoginController implements Controller {
       return ok({ accessToken });
     } catch (error) {
       console.log(error);
-      
+
       return serverError(error);
     }
   }

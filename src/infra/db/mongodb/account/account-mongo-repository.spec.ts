@@ -1,6 +1,6 @@
-import { Collection } from "mongodb";
-import { MongoHelper } from "../helpers/mongo-helpers";
 import { AccountMongoRepository } from "./account-mongo-repository";
+import { MongoHelper } from "../helpers/mongo-helpers";
+import { Collection } from "mongodb";
 
 let accountCollection: Collection
 
