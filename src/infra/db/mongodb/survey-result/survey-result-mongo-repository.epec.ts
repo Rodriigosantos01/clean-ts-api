@@ -1,4 +1,4 @@
-import { SurveyMongoRepository } from "./survey-result-mongo-repository";
+import { SurveyResultMongoRepository } from "./survey-result-mongo-repository";
 import { MongoHelper } from "../helpers/mongo-helpers";
 import { Collection } from "mongodb";
 
@@ -6,8 +6,8 @@ let surveyCollection: Collection
 let surveyResultCollection: Collection
 let AccountCollection: Collection
 
-const makeSut = (): SurveyMongoRepository => {
-    return new SurveyMongoRepository()
+const makeSut = (): SurveyResultMongoRepository => {
+    return new SurveyResultMongoRepository()
 }
 
 const makeSurvey = async (): Promise<string> => {
