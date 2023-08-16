@@ -9,7 +9,7 @@ const makeLoadAccountByEmailRepository = (): LoadAccountByEmailRepository => {
     class LoadAccountByEmailRepositoryStub implements LoadAccountByEmailRepository {
         async loadByEmail(email: string): Promise<AccountModel> {
             const account = mockAccountModel()
-            return new Promise(resolve => resolve(account))
+            return Promise.resolve(account)
         }
     }
     return new LoadAccountByEmailRepositoryStub()
@@ -76,7 +76,7 @@ describe('DbAuthentication usecase', () => {
 
     test('Should return null if HashComparer returns false', async () => {
         const { sut, hashComparerStub } = makeSut()
-        jest.spyOn(hashComparerStub, 'compare').mockReturnValueOnce(new Promise(resolve => resolve(false)))
+        jest.spyOn(hashComparerStub, 'compare').mockReturnValueOnce(Promise.resolve(false))
         const accessToken = await sut.auth(mockFakeAuthentication())
         expect(accessToken).toBeNull()
     });

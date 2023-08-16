@@ -7,7 +7,7 @@ import { LoadAccountByToken } from "@/domain/usecases/account/load-account-by-to
 export const mockAddAccount = (): AddAccount => {
   class AddAccountStub implements AddAccount {
     async add(aaccount: AddAccountParams): Promise<AccountModel> {
-      return new Promise((resolve) => resolve(mockAccountModel()));
+      return Promise.resolve(mockAccountModel())
     }
   }
 
@@ -17,7 +17,7 @@ export const mockAddAccount = (): AddAccount => {
 export const mockAuthentication = (): Authentication => {
   class AuthenticationStub implements Authentication {
     async auth(authentication: AuthenticationParams): Promise<string> {
-      return new Promise((resolve) => resolve("any_token"));
+      return Promise.resolve("any_token")
     }
   }
 
@@ -27,7 +27,7 @@ export const mockAuthentication = (): Authentication => {
 export const mockLoadAccountByToken = (): LoadAccountByToken => {
   class LoadAccountByTokenStub implements LoadAccountByToken {
       async load(accessToken: string, role?: string | undefined): Promise<AccountModel> {
-          return new Promise(resolve => resolve(mockAccountModel()))
+          return Promise.resolve(mockAccountModel())
       }
 
   }
