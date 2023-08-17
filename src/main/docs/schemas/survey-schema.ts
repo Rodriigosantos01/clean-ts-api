@@ -16,5 +16,6 @@ export const surveySchema = {
         data: {
             type: 'string'
         },
-    }
+    },
+    required: ['id', 'question', 'answer', 'data']
 }
