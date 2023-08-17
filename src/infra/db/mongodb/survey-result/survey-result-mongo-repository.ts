@@ -1,14 +1,13 @@
-import { MongoHelper, QueryBuilder } from '@/infra/db'
-import { SaveSurveyResultRepository, LoadSurveyResultRepository } from '@/data/protocols/db'
-
 import { ObjectId } from 'mongodb'
 import round from 'mongo-round'
-import { SurveyResultModel } from '@/domain/models'
+import { MongoHelper, QueryBuilder } from '../helpers'
+import { SurveyResultModel } from '@/domain/models/survey-result'
+import { SaveSurveyResultRepository } from '@/data/protocols/db/survey-result/save-survey-result-repository'
 
 export class SurveyResultMongoRepository implements SaveSurveyResultRepository, LoadSurveyResultRepository {
   async save (data: SaveSurveyResultRepository.Params): Promise<void> {
     const surveyResultCollection = MongoHelper.getCollection('surveyResults')
-    await surveyResultCollection.findOneAndUpdate({
+    await (await surveyResultCollection).findOneAndUpdate({
       surveyId: new ObjectId(data.surveyId),
       accountId: new ObjectId(data.accountId)
     }, {
@@ -19,11 +18,9 @@ export class SurveyResultMongoRepository implements SaveSurveyResultRepository, 
     }, {
       upsert: true
     })
-
-    return this.loadBySurveyId(data.surveyId)
   }
 
-  private async loadBySurveyId (surveyId: string): Promise<LoadSurveyResultRepository.Result> {
+  async loadBySurveyId (surveyId: string, accountId: string): Promise<LoadSurveyResultRepository.Result> {
     const surveyResultCollection = MongoHelper.getCollection('surveyResults')
     const query = new QueryBuilder()
       .match({
@@ -62,11 +59,11 @@ export class SurveyResultMongoRepository implements SaveSurveyResultRepository, 
         count: {
           $sum: 1
         },
-        // currentAccountAnswer: {
-        //   $push: {
-        //     $cond: [{ $eq: ['$data.accountId', new ObjectId(accountId)] }, '$data.answer', '$invalid']
-        //   }
-        // }
+        currentAccountAnswer: {
+          $push: {
+            $cond: [{ $eq: ['$data.accountId', new ObjectId(accountId)] }, '$data.answer', '$invalid']
+          }
+        }
       })
       .project({
         _id: 0,
@@ -101,13 +98,13 @@ export class SurveyResultMongoRepository implements SaveSurveyResultRepository, 
                     else: 0
                   }
                 },
-                // isCurrentAccountAnswerCount: {
-                //   $cond: [{
-                //     $eq: ['$$item.answer', {
-                //       $arrayElemAt: ['$currentAccountAnswer', 0]
-                //     }]
-                //   }, 1, 0]
-                // }
+                isCurrentAccountAnswerCount: {
+                  $cond: [{
+                    $eq: ['$$item.answer', {
+                      $arrayElemAt: ['$currentAccountAnswer', 0]
+                    }]
+                  }, 1, 0]
+                }
               }]
             }
           }
@@ -155,9 +152,9 @@ export class SurveyResultMongoRepository implements SaveSurveyResultRepository, 
         percent: {
           $sum: '$answers.percent'
         },
-        // isCurrentAccountAnswerCount: {
-        //   $sum: '$answers.isCurrentAccountAnswerCount'
-        // }
+        isCurrentAccountAnswerCount: {
+          $sum: '$answers.isCurrentAccountAnswerCount'
+        }
       })
       .project({
         _id: 0,
@@ -169,9 +166,9 @@ export class SurveyResultMongoRepository implements SaveSurveyResultRepository, 
           image: '$_id.image',
           count: round('$count'),
           percent: round('$percent'),
-          // isCurrentAccountAnswer: {
-          //   $eq: ['$isCurrentAccountAnswerCount', 1]
-          // }
+          isCurrentAccountAnswer: {
+            $eq: ['$isCurrentAccountAnswerCount', 1]
+          }
         }
       })
       .sort({
@@ -189,7 +186,9 @@ export class SurveyResultMongoRepository implements SaveSurveyResultRepository, 
       })
       .project({
         _id: 0,
-        surveyId: '$_id.surveyId',
+        surveyId: {
+          $toString: '$_id.surveyId'
+        },
         question: '$_id.question',
         date: '$_id.date',
         answers: '$answers'
