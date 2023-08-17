@@ -1,100 +1,201 @@
-import { SurveyResultMongoRepository } from "./survey-result-mongo-repository";
-import { MongoHelper } from "../helpers/mongo-helpers";
-import { Collection } from "mongodb";
+import { SaveSurveyResultRepository, LoadSurveyResultRepository } from '@/data/protocols/db'
 
-let surveyCollection: Collection
-let surveyResultCollection: Collection
-let AccountCollection: Collection
+import { ObjectId } from 'mongodb'
+import round from 'mongo-round'
+import { SurveyResultModel } from '@/domain/models'
+import { MongoHelper, QueryBuilder } from '../helpers'
 
-const makeSut = (): SurveyResultMongoRepository => {
-    return new SurveyResultMongoRepository()
-}
+export class SurveyResultMongoRepository implements SaveSurveyResultRepository, LoadSurveyResultRepository {
+  async save (data: SaveSurveyResultRepository.Params): Promise<void> {
+    const surveyResultCollection = MongoHelper.getCollection('surveyResults')
+    await surveyResultCollection.findOneAndUpdate({
+      surveyId: new ObjectId(data.surveyId),
+      accountId: new ObjectId(data.accountId)
+    }, {
+      $set: {
+        answer: data.answer,
+        date: data.date
+      }
+    }, {
+      upsert: true
+    })
+  }
 
-const makeSurvey = async (): Promise<string> => {
-    const res = await surveyCollection.insertOne({
-        question: 'any_question',
-        answers: [
-            {
-                image: 'any_image',
-                answer: 'any_answer'
-            },
-            {
-                answer: 'other_answer'
+  async loadBySurveyId (surveyId: string, accountId: string): Promise<LoadSurveyResultRepository.Result> {
+    const surveyResultCollection = MongoHelper.getCollection('surveyResults')
+    const query = new QueryBuilder()
+      .match({
+        surveyId: new ObjectId(surveyId)
+      })
+      .group({
+        _id: 0,
+        data: {
+          $push: '$$ROOT'
+        },
+        total: {
+          $sum: 1
+        }
+      })
+      .unwind({
+        path: '$data'
+      })
+      .lookup({
+        from: 'surveys',
+        foreignField: '_id',
+        localField: 'data.surveyId',
+        as: 'survey'
+      })
+      .unwind({
+        path: '$survey'
+      })
+      .group({
+        _id: {
+          surveyId: '$survey._id',
+          question: '$survey.question',
+          date: '$survey.date',
+          total: '$total',
+          answer: '$data.answer',
+          answers: '$survey.answers'
+        },
+        count: {
+          $sum: 1
+        },
+        currentAccountAnswer: {
+          $push: {
+            $cond: [{ $eq: ['$data.accountId', new ObjectId(accountId)] }, '$data.answer', '$invalid']
+          }
+        }
+      })
+      .project({
+        _id: 0,
+        surveyId: '$_id.surveyId',
+        question: '$_id.question',
+        date: '$_id.date',
+        answers: {
+          $map: {
+            input: '$_id.answers',
+            as: 'item',
+            in: {
+              $mergeObjects: ['$$item', {
+                count: {
+                  $cond: {
+                    if: {
+                      $eq: ['$$item.answer', '$_id.answer']
+                    },
+                    then: '$count',
+                    else: 0
+                  }
+                },
+                percent: {
+                  $cond: {
+                    if: {
+                      $eq: ['$$item.answer', '$_id.answer']
+                    },
+                    then: {
+                      $multiply: [{
+                        $divide: ['$count', '$_id.total']
+                      }, 100]
+                    },
+                    else: 0
+                  }
+                },
+                isCurrentAccountAnswerCount: {
+                  $cond: [{
+                    $eq: ['$$item.answer', {
+                      $arrayElemAt: ['$currentAccountAnswer', 0]
+                    }]
+                  }, 1, 0]
+                }
+              }]
             }
-        ],
-        date: new Date()
-    })
-
-    return res.insertedId.toHexString()
+          }
+        }
+      })
+      .group({
+        _id: {
+          surveyId: '$surveyId',
+          question: '$question',
+          date: '$date'
+        },
+        answers: {
+          $push: '$answers'
+        }
+      })
+      .project({
+        _id: 0,
+        surveyId: '$_id.surveyId',
+        question: '$_id.question',
+        date: '$_id.date',
+        answers: {
+          $reduce: {
+            input: '$answers',
+            initialValue: [],
+            in: {
+              $concatArrays: ['$$value', '$$this']
+            }
+          }
+        }
+      })
+      .unwind({
+        path: '$answers'
+      })
+      .group({
+        _id: {
+          surveyId: '$surveyId',
+          question: '$question',
+          date: '$date',
+          answer: '$answers.answer',
+          image: '$answers.image'
+        },
+        count: {
+          $sum: '$answers.count'
+        },
+        percent: {
+          $sum: '$answers.percent'
+        },
+        isCurrentAccountAnswerCount: {
+          $sum: '$answers.isCurrentAccountAnswerCount'
+        }
+      })
+      .project({
+        _id: 0,
+        surveyId: '$_id.surveyId',
+        question: '$_id.question',
+        date: '$_id.date',
+        answer: {
+          answer: '$_id.answer',
+          image: '$_id.image',
+          count: round('$count'),
+          percent: round('$percent'),
+          isCurrentAccountAnswer: {
+            $eq: ['$isCurrentAccountAnswerCount', 1]
+          }
+        }
+      })
+      .sort({
+        'answer.count': -1
+      })
+      .group({
+        _id: {
+          surveyId: '$surveyId',
+          question: '$question',
+          date: '$date'
+        },
+        answers: {
+          $push: '$answer'
+        }
+      })
+      .project({
+        _id: 0,
+        surveyId: {
+          $toString: '$_id.surveyId'
+        },
+        question: '$_id.question',
+        date: '$_id.date',
+        answers: '$answers'
+      })
+      .build()
+    const surveyResult = await surveyResultCollection.aggregate<SurveyResultModel>(query).toArray()
+    return surveyResult.length ? surveyResult[0] : null
+  }
 }
-
-const makeAccount = async (): Promise<string> => {
-    const res = await AccountCollection.insertOne({
-        name: 'any_name',
-        email: 'any_email',
-        password: 'any_password'
-    })
-
-    return res.insertedId.toHexString()
-}
-
-describe('Survey Mongo Repository', () => {
-    beforeAll(async () => {
-        await MongoHelper.connect(process.env.MONGO_URL)
-    })
-
-    afterAll(async () => {
-        await MongoHelper.disconnect()
-    })
-
-    beforeEach(async () => {
-        surveyCollection = await MongoHelper.getCollection('surveys')
-        await surveyCollection.deleteMany({})
-        surveyResultCollection = await MongoHelper.getCollection('surveyResults')
-        await surveyResultCollection.deleteMany({})
-        AccountCollection = await MongoHelper.getCollection('account')
-        await AccountCollection.deleteMany({})
-    })
-
-    describe('save()', () => {
-        test('Shold add a survey result if its new', async () => {
-            const surveyId = await makeSurvey();
-            const accountId = await makeAccount();
-            const sut = makeSut()
-
-            const surveyResult = await sut.save({
-                surveyId,
-                accountId,
-                answer: 'any_answer',
-                date: new Date()
-            })
-
-            expect(surveyResult).toBeTruthy()
-            expect(surveyResult.id).toBeTruthy()
-            expect(surveyResult.answer).toBe('any_answer')
-        })
-        
-        test('Shold update survey result if its not new', async () => {
-            const surveyId = await makeSurvey();
-            const accountId = await makeAccount();
-
-            const res = await surveyCollection.insertOne({
-                surveyId,
-                accountId,
-                answer: 'any_answer',
-                date: new Date()
-            })
-            const sut = makeSut()
-            const surveyResult = await sut.save({
-                surveyId,
-                accountId,
-                answer: 'other_answer',
-                date: new Date()
-            })
-
-            expect(surveyResult).toBeTruthy()
-            expect(surveyResult.id).toEqual(res.insertedId)
-            expect(surveyResult.answer).toBe('other_answer')
-        })
-    });
-});
