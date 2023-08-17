@@ -1,9 +1,9 @@
-import { apiKeySchema } from './schemas'
 import { badRequest, serverError, unauthorized, notFound, forbidden } from './components/'
+import { apiKeyAuthSchema } from './schemas/'
 
 export default {
     securitySchemes: {
-        apiKeyAuth: apiKeySchema
+        apiKeyAuth: apiKeyAuthSchema 
     },
     badRequest,
     serverError,
