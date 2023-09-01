@@ -1,20 +1,23 @@
 import { DbLoadSurveyResult } from "./db-load-survey-result";
-import { LoadSurveyResultRepository } from "./db-load-survey-result-protocols";
-import { mockLoadSurveyResultRepository } from "@/data/test";
+import { LoadSurveyResultRepository, LoadSurveyByIdRepository } from "./db-load-survey-result-protocols";
+import { mockLoadSurveyByIdRepository, mockLoadSurveyResultRepository } from "@/data/test";
 import { mockSurveyResultModel, throwError } from "@/domain/test";
 
 type SutTypes = {
     sut: DbLoadSurveyResult
     loadSurveyResultRpositoryStub: LoadSurveyResultRepository
+    loadSurveyByIdRepositoryStub: LoadSurveyByIdRepository
 }
 
 const makeSut = (): SutTypes => {
     const loadSurveyResultRpositoryStub = mockLoadSurveyResultRepository()
-    const sut = new DbLoadSurveyResult(loadSurveyResultRpositoryStub)
+    const loadSurveyByIdRepositoryStub = mockLoadSurveyByIdRepository()
+    const sut = new DbLoadSurveyResult(loadSurveyResultRpositoryStub, loadSurveyByIdRepositoryStub)
 
     return {
         sut,
-        loadSurveyResultRpositoryStub
+        loadSurveyResultRpositoryStub,
+        loadSurveyByIdRepositoryStub
     }
 }
 
@@ -33,6 +36,14 @@ describe('DbLoadSurveyResult UseCase', () => {
         jest.spyOn(loadSurveyResultRpositoryStub, 'loadBySurveyId').mockImplementation(throwError)
         const promise = sut.load('any_survey_id')
         await expect(promise).rejects.toThrow()
+    });
+    
+    test('Should call LoadSurveyByUDRepository if LoadSurveyResultRepository returns null', async () => {
+        const { sut, loadSurveyResultRpositoryStub, loadSurveyByIdRepositoryStub } = makeSut()
+        const loadByIdSpy = jest.spyOn(loadSurveyByIdRepositoryStub, 'loadById')
+        jest.spyOn(loadSurveyResultRpositoryStub, 'loadBySurveyId').mockReturnValueOnce(Promise.resolve(null))
+        const surveyResult = await sut.load('any_survey_id')
+        expect(loadByIdSpy).toHaveBeenCalledWith('any_survey_id')
     });
     
     test('Should return surveyResultModel on success', async () => {
